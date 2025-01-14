@@ -1,0 +1,13 @@
+version: "3"
+
+
+tasks:
+  default:
+    cmds:
+      - task --list
+    silent: true
+
+  format:
+    desc: "Format terraform files"
+    cmds:
+      - terraform fmt **/*.tf
