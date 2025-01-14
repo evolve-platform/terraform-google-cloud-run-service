@@ -1,0 +1,15 @@
+name: Terraform Check Workflow
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  terraform-checks:
+    permissions:
+      actions: read
+      contents: write
+      security-events: write
+      pull-requests: write
+      id-token: write
+    uses: evolve-platform/terraform-github-workflows/.github/workflows/terraform-module-v1.yaml@main
+    secrets: inherit

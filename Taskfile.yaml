@@ -1,0 +1,18 @@
+version: "3"
+
+
+tasks:
+  default:
+    cmds:
+      - task --list
+    silent: true
+
+  format:
+    desc: "Format terraform files"
+    cmds:
+      - terraform fmt *.tf
+
+  docs:
+    desc: "Generate terraform docs"
+    cmds:
+      - terraform-docs markdown table --output-file README.md --output-mode inject .

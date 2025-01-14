@@ -1,0 +1,14 @@
+name: Dependabot add changie file
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  terraform-checks:
+    permissions:
+      pull-requests: write
+      issues: write
+      repository-projects: write
+      contents: write
+    uses: evolve-platform/terraform-github-workflows/.github/workflows/dependabot-changie-v1.yaml@main
+    secrets: inherit
