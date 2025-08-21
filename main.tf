@@ -27,6 +27,7 @@ resource "google_cloud_run_v2_service" "primary" {
     }
 
     containers {
+      name  = "main"
       image = var.image
 
       command = length(var.container_command) > 0 ? var.container_command : null
@@ -45,12 +46,32 @@ resource "google_cloud_run_v2_service" "primary" {
         container_port = var.http_port
       }
 
-      liveness_probe {
-        http_get {
-          path = var.healthcheck.path # Checks for status code 200 - 399
+      dynamic "startup_probe" {
+        for_each = var.healthcheck_startup != null ? [var.healthcheck_startup] : []
+        content {
+          http_get {
+            path = var.healthcheck_startup.path
+            port = var.healthcheck_startup.port
+          }
+          initial_delay_seconds = var.healthcheck_startup.inital_delay
+          timeout_seconds       = var.healthcheck_startup.timeout
+          period_seconds        = var.healthcheck_startup.interval
+          failure_threshold     = var.healthcheck_startup.unhealthy_threshold
         }
-        failure_threshold = var.healthcheck.unhealthy_threshold
-        timeout_seconds   = var.healthcheck.timeout
+      }
+
+      dynamic "liveness_probe" {
+        for_each = var.healthcheck != null ? [var.healthcheck] : []
+        content {
+          http_get {
+            path = var.healthcheck.path
+            port = var.healthcheck.port
+          }
+          initial_delay_seconds = var.healthcheck.inital_delay
+          timeout_seconds       = var.healthcheck.timeout
+          period_seconds        = var.healthcheck.interval
+          failure_threshold     = var.healthcheck.unhealthy_threshold
+        }
       }
 
       dynamic "env" {

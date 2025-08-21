@@ -80,10 +80,13 @@ variable "service_account" {
 variable "healthcheck" {
   type = object({
     path                = string
-    unhealthy_threshold = number
-    timeout             = number
-    interval            = number
+    port                = optional(number)
+    inital_delay        = optional(number)
+    unhealthy_threshold = optional(number)
+    timeout             = optional(number)
+    interval            = optional(number)
   })
+  nullable = true
   default = {
     path                = "/"
     unhealthy_threshold = 3
@@ -91,6 +94,20 @@ variable "healthcheck" {
     interval            = 5
   }
   description = "Healthcheck configuration"
+}
+
+variable "healthcheck_startup" {
+  type = object({
+    path                = string
+    port                = optional(number)
+    inital_delay        = optional(number)
+    unhealthy_threshold = optional(number)
+    timeout             = optional(number)
+    interval            = optional(number)
+  })
+  nullable    = true
+  default     = null
+  description = "Startup probe configuration"
 }
 
 variable "vpc_network" {
