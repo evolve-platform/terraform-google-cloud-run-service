@@ -1,0 +1,3 @@
+kind: Added
+body: Added options to set startup probe, allow healthcheck to be unset
+time: 2025-08-21T18:21:58.579478204+02:00
