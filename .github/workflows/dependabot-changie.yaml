@@ -10,5 +10,5 @@ jobs:
       issues: write
       repository-projects: write
       contents: write
-    uses: evolve-platform/terraform-github-workflows/.github/workflows/dependabot-changie-v1.yaml@main
+    uses: evolve-platform/terraform-github-workflows/.github/workflows/dependabot-changie-v1.yaml@a7b03e3197bfdd5883f451854fce85375c2dc2e0 # v0.0.1
     secrets: inherit
