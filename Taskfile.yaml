@@ -18,11 +18,11 @@ tasks:
       - terraform-docs markdown table --output-file README.md --output-mode inject .
 
   parity:
-    desc: "Check modules/deploy-managed still differs from the root module only by what parity.diff records"
+    desc: "Check modules/deploy-managed is what the root module plus scripts/parity.py generates"
     cmds:
-      - ./scripts/parity.sh check
+      - ./scripts/parity.py check
 
   parity:update:
-    desc: "Record the current difference between modules/deploy-managed and the root module"
+    desc: "Regenerate modules/deploy-managed from the root module"
     cmds:
-      - ./scripts/parity.sh update
+      - ./scripts/parity.py update

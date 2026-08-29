@@ -15,9 +15,10 @@ in your setup:
 `modules/deploy-managed` is a copy of this module rather than a wrapper over it,
 because the only thing it adds is a `lifecycle` block — and `ignore_changes` takes
 a static list of attribute references, so it cannot be made opt-in with a variable
-and cannot be added to a child module's resource from outside. Everything else is
-shared, and `scripts/parity.sh` fails the build when the two copies differ by more
-than [`parity.diff`](modules/deploy-managed/parity.diff) records.
+and cannot be added to a child module's resource from outside. So the submodule is
+generated: [`scripts/parity.py`](scripts/parity.py) holds the entire intended
+difference between the two and fails the build when what is committed is not what
+the root module plus that difference produces.
 
 ## Upgrading to 0.2.0
 

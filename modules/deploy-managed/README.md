@@ -34,9 +34,10 @@ cannot add a `lifecycle` block to a resource declared in a child. Putting it in
 the root module would force it on every consumer that does set the image through
 Terraform, which is why this is a second copy instead.
 
-`scripts/parity.sh` is what keeps the copy honest: it fails when the two differ by
-anything `parity.diff` does not already record, so a fix landing in one of them and
-not the other is caught rather than noticed years later.
+`scripts/parity.py` is what keeps the copy honest. It generates these files from
+the root module's, and holds the entire intended difference between the two — so a
+fix landing in one of them and not the other fails the build rather than being
+noticed years later. Edit the root module and run `task parity:update`.
 
 ## What the deploy owns
 
