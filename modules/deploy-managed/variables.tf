@@ -124,9 +124,10 @@ variable "service_account" {
   default     = null
 }
 
-# Superseded by `healthcheck_liveness`, and still read when that one is unset so
-# that upgrading needs no edit. Kept nullable, which is how the probe is turned
-# off entirely.
+# The root module's pre-0.2 name for the liveness probe, carried here only so the
+# two copies stay comparable. Null by default: no consumer of this module predates
+# `healthcheck_liveness`, and a deprecated name that quietly adds a probe on `/`
+# would restart every container whose service answers 404 there.
 variable "healthcheck" {
   type = object({
     path                = string
@@ -134,13 +135,8 @@ variable "healthcheck" {
     timeout             = number
     interval            = number
   })
-  nullable = true
-  default = {
-    path                = "/"
-    unhealthy_threshold = 3
-    timeout             = 2
-    interval            = 5
-  }
+  nullable    = true
+  default     = null
   description = "Deprecated alias for healthcheck_liveness"
 }
 
@@ -238,14 +234,15 @@ variable "labels" {
   default     = {}
 }
 
-# Null leaves the traffic block out, which is what a service released by an
-# apply wants: the newest revision takes everything. Naming a label instead
-# bootstraps one tagged entry, which is what a blue-green release needs to have
-# a side to deploy away from.
+# The side a first create bootstraps. The deploy tool refuses a service whose
+# serving traffic entry carries no tag -- it can move a tag that exists but
+# cannot invent the first one -- so the initial entry has to name one. Null is
+# still accepted, and gives a service this module manages everything about
+# except its releases.
 variable "initial_label" {
   description = "Traffic label the first revision is tagged with. Null leaves traffic untagged."
   type        = string
-  default     = null
+  default     = "blue"
 
   validation {
     condition     = var.initial_label == null || contains(["blue", "green"], var.initial_label)

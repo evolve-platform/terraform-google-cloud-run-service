@@ -232,10 +232,15 @@ resource "google_cloud_run_v2_service" "primary" {
     }
   }
 
-  # Absent unless a label is asked for, which is what leaves the newest revision
-  # taking everything -- the behaviour a service whose releases are applies
-  # wants. A named label is the first half of a blue-green release and is what
-  # modules/deploy-managed exists for.
+  # One tagged entry, and only on a first create. The deploy tool refuses a
+  # service whose serving entry has no tag, because there is then no side to
+  # deploy away from -- and it cannot invent the first tag itself.
+  #
+  # LATEST rather than a pinned revision: a revision name does not exist until
+  # the API generates one, so there is nothing for Terraform to point at here.
+  # The tool pins it to a concrete revision before it stages anything, since
+  # "whatever is newest" would otherwise hand all the traffic to the revision
+  # being staged the moment it exists.
   dynamic "traffic" {
     for_each = var.initial_label != null ? [var.initial_label] : []
     content {
@@ -243,5 +248,26 @@ resource "google_cloud_run_v2_service" "primary" {
       tag     = traffic.value
       percent = 100
     }
+  }
+
+  # Deploys do not run Terraform here -- the deploy tool patches the running
+  # service -- so what the deploy owns has to survive an apply.
+  #
+  # `ignore_changes` takes a static list of attribute references: no variable
+  # and no conditional, so this cannot be made opt-in. That is the whole reason
+  # this module is a second copy of the root one rather than a wrapper over it.
+  #
+  # The index is the application container, which is declared first above and
+  # stays first: Terraform sends the list in configuration order, and the deploy
+  # tool rewrites a container in place rather than reordering. The reverse-proxy
+  # sidecar is deliberately not covered -- Terraform owns its image and its whole
+  # environment, so those land on the apply rather than waiting for a release.
+  lifecycle {
+    ignore_changes = [
+      template[0].annotations,
+      template[0].containers[0].image,
+      template[0].containers[0].env,
+      traffic,
+    ]
   }
 }

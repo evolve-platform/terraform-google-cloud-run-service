@@ -10,9 +10,19 @@ tasks:
   format:
     desc: "Format terraform files"
     cmds:
-      - terraform fmt *.tf
+      - terraform fmt -recursive .
 
   docs:
     desc: "Generate terraform docs"
     cmds:
       - terraform-docs markdown table --output-file README.md --output-mode inject .
+
+  parity:
+    desc: "Check modules/deploy-managed still differs from the root module only by what parity.diff records"
+    cmds:
+      - ./scripts/parity.sh check
+
+  parity:update:
+    desc: "Record the current difference between modules/deploy-managed and the root module"
+    cmds:
+      - ./scripts/parity.sh update

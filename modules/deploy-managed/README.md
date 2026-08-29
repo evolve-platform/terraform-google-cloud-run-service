@@ -1,50 +1,91 @@
-# GCP Cloud Run Terraform Module
+# Cloud Run service, released by a deploy tool
 
-Terraform module to manage a GCP Cloud Run service.
+The root module, plus a `lifecycle` block. Use it when a release is not an apply —
+when something outside Terraform sets the image and the container environment on
+the running service, and an apply must not put this configuration back over it.
 
-## Which of the two modules
+```hcl
+module "service" {
+  source  = "evolve-platform/cloud-run-service/google//modules/deploy-managed"
+  version = "0.2.0"
 
-There are two entry points, and the one to pick is decided by what sets the image
-in your setup:
+  name       = "my-service"
+  project_id = "my-project"
+  image      = "europe-west4-docker.pkg.dev/my-project/my-repo/my-service:bootstrap"
+}
+```
 
-| Module | Terraform owns | Use it when |
-| --- | --- | --- |
-| this one | everything, image and environment included | a release is an apply |
-| [`modules/deploy-managed`](modules/deploy-managed) | everything but the image, the container environment and the traffic split | a deploy tool patches the running service |
+## Why it is a copy
 
-`modules/deploy-managed` is a copy of this module rather than a wrapper over it,
-because the only thing it adds is a `lifecycle` block — and `ignore_changes` takes
-a static list of attribute references, so it cannot be made opt-in with a variable
-and cannot be added to a child module's resource from outside. Everything else is
-shared, and `scripts/parity.sh` fails the build when the two copies differ by more
-than [`parity.diff`](modules/deploy-managed/parity.diff) records.
+```hcl
+lifecycle {
+  ignore_changes = [
+    template[0].annotations,
+    template[0].containers[0].image,
+    template[0].containers[0].env,
+    traffic,
+  ]
+}
+```
 
-## Upgrading to 0.2.0
+`ignore_changes` takes a static list of attribute references: a variable is not
+allowed there, so the behaviour cannot be made opt-in — and a wrapper module
+cannot add a `lifecycle` block to a resource declared in a child. Putting it in
+the root module would force it on every consumer that does set the image through
+Terraform, which is why this is a second copy instead.
 
-Nothing to edit. `healthcheck` still configures the liveness probe, and the two
-containers, the startup probe and the traffic label are all off by default.
+`scripts/parity.sh` is what keeps the copy honest: it fails when the two differ by
+anything `parity.diff` does not already record, so a fix landing in one of them and
+not the other is caught rather than noticed years later.
 
-Expect one plan to be noisy the first time: the service-level `scaling` block, the
-container name and the probe's port are now stated rather than left to the API,
-which is what stops them being re-planned on every run afterwards. The probe port
-is a fix rather than cosmetic — an absent one is filled in by the API and never
-planned again, so a probe could sit polling a port the container does not listen
-on.
+## What the deploy owns
 
-`google` must now be `>= 6.12.0` and `terraform` `>= 1.3`.
+`var.image` is only the **bootstrap** value, used when the service is first
+created. Every tag after that comes from the deploy. `var.env_vars` and
+`var.secrets` are the same: they exist so a first create produces a container that
+boots, and every value after that is applied by the deploy. The list cannot be
+narrower than the whole `env` block — `ignore_changes` has no way to name a single
+variable — which is why the secret references are in there with the rest.
 
-## A sidecar takes ingress
+The index names the application container, which is declared first and stays
+first. The reverse-proxy sidecar is deliberately not covered: Terraform owns its
+image and its whole environment, so those land on the apply rather than waiting for
+a release.
 
-Setting `proxy_image` puts a second container in front of the application one.
-Cloud Run accepts ports on a single container and probes on that same container,
-so both move to the sidecar; the application container is then reached over
-localhost, and the probes still check it because the proxy passes the path
-through.
+## Blue-green
 
-Its CPU comes out of `cpu` rather than being added to it: Cloud Run sizes the
-instance from the sum of its containers' limits, and that sum has to be one of the
-supported values. So the way to leave the application container whole is a larger
-`cpu`, not a smaller `proxy_cpu`.
+A Cloud Run service divides traffic between named **tags** rather than the newest
+revision, which is what makes a blue-green release possible: the previous revision
+stays alive, and `blue`/`green` each point at one. A deploy stages a release onto
+whichever tag carries no traffic, smoke-tests it on that tag's own URL, and
+switches in one write.
+
+Terraform bootstraps exactly one entry, on a first create only. Two things about it
+are deliberate:
+
+- **It carries a tag.** A service whose serving entry has none leaves no side to
+  deploy away from, and moving traffic can only move a tag that already exists, not
+  invent the first one. Bootstrapping it is the one part of blue-green that has to
+  happen here.
+- **It is `LATEST`, not a pinned revision.** A revision name does not exist until
+  the API generates one, so there is nothing for Terraform to point at on a create.
+  A deploy tool pins the entry to a concrete revision before it stages anything,
+  because while "whatever is newest" stands, every new revision takes all the
+  traffic the moment it exists.
+
+After the create the block is the tool's, which is why `traffic` is in
+`ignore_changes` alongside the container. Setting `initial_label = null` leaves the
+block out and gives a service this module manages everything about except its
+releases.
+
+## What a Terraform change does reach
+
+Everything outside `template[0].containers[0]` and `traffic` lands on the apply
+itself — scaling, ingress, egress, the VPC interface, the service account, labels.
+Inside the container only `cpu`, `memory`, the probes and `container_command` are
+still Terraform's; those land on the next release, which stages from the service's
+own template and picks them up. The ordering is apply first, release second.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -79,13 +120,13 @@ No modules.
 | <a name="input_deletion_protection"></a> [deletion\_protection](#input\_deletion\_protection) | Refuse to delete this resource until unset | `bool` | `true` | no |
 | <a name="input_egress"></a> [egress](#input\_egress) | Egress mode for VPC access. Options are PRIVATE\_RANGES\_ONLY or ALL\_TRAFFIC | `string` | `"ALL_TRAFFIC"` | no |
 | <a name="input_env_vars"></a> [env\_vars](#input\_env\_vars) | Environment variables to set | `map(any)` | `{}` | no |
-| <a name="input_healthcheck"></a> [healthcheck](#input\_healthcheck) | Deprecated alias for healthcheck\_liveness | <pre>object({<br/>    path                = string<br/>    unhealthy_threshold = number<br/>    timeout             = number<br/>    interval            = number<br/>  })</pre> | <pre>{<br/>  "interval": 5,<br/>  "path": "/",<br/>  "timeout": 2,<br/>  "unhealthy_threshold": 3<br/>}</pre> | no |
+| <a name="input_healthcheck"></a> [healthcheck](#input\_healthcheck) | Deprecated alias for healthcheck\_liveness | <pre>object({<br/>    path                = string<br/>    unhealthy_threshold = number<br/>    timeout             = number<br/>    interval            = number<br/>  })</pre> | `null` | no |
 | <a name="input_healthcheck_liveness"></a> [healthcheck\_liveness](#input\_healthcheck\_liveness) | Liveness probe configuration. Null falls back to `healthcheck`, and leaves the container unwatched once it is serving if that is null too. | <pre>object({<br/>    path                = string<br/>    unhealthy_threshold = optional(number, 3)<br/>    timeout             = optional(number, 5)<br/>    interval            = optional(number, 10)<br/>  })</pre> | `null` | no |
 | <a name="input_healthcheck_startup"></a> [healthcheck\_startup](#input\_healthcheck\_startup) | Startup probe configuration. Null leaves Cloud Run its default TCP check, where ready means only that the port is open. | <pre>object({<br/>    path                = string<br/>    unhealthy_threshold = optional(number, 40)<br/>    timeout             = optional(number, 3)<br/>    interval            = optional(number, 5)<br/>  })</pre> | `null` | no |
 | <a name="input_http_port"></a> [http\_port](#input\_http\_port) | The port the service listens on | `number` | `4000` | no |
 | <a name="input_image"></a> [image](#input\_image) | The image to deploy | `string` | n/a | yes |
 | <a name="input_ingress"></a> [ingress](#input\_ingress) | Ingress traffic, options are INGRESS\_TRAFFIC\_ALL, INGRESS\_TRAFFIC\_INTERNAL\_LOAD\_BALANCER, INGRESS\_TRAFFIC\_INTERNAL\_ONLY | `string` | `"INGRESS_TRAFFIC_INTERNAL_LOAD_BALANCER"` | no |
-| <a name="input_initial_label"></a> [initial\_label](#input\_initial\_label) | Traffic label the first revision is tagged with. Null leaves traffic untagged. | `string` | `null` | no |
+| <a name="input_initial_label"></a> [initial\_label](#input\_initial\_label) | Traffic label the first revision is tagged with. Null leaves traffic untagged. | `string` | `"blue"` | no |
 | <a name="input_labels"></a> [labels](#input\_labels) | Labels to apply to the service | `map(string)` | `{}` | no |
 | <a name="input_location"></a> [location](#input\_location) | The location to deploy the service | `string` | `"europe-west4"` | no |
 | <a name="input_max_instance_count"></a> [max\_instance\_count](#input\_max\_instance\_count) | The maximum number of instances to run | `number` | `2` | no |

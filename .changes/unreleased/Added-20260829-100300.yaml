@@ -1,0 +1,4 @@
+kind: Added
+body: '`deletion_protection` and `initial_label`. Requires google >= 6.12.0 and terraform
+  >= 1.3, both of which the module now declares'
+time: 2026-08-29T10:03:00.000000+02:00
