@@ -1,0 +1,5 @@
+kind: Added
+body: '`healthcheck_startup`, so a revision can be kept from taking traffic until its
+  dependencies answer. Without one Cloud Run falls back to a TCP check, where ready
+  means only that the port is bound'
+time: 2026-08-29T10:02:00.000000+02:00

@@ -1,0 +1,5 @@
+kind: Fixed
+body: Three changes the service used to re-plan on every run. The service-level `scaling`
+  block and the container name are stated rather than left to the API, which reports
+  both back whether or not they were asked for
+time: 2026-08-29T10:04:00.000000+02:00

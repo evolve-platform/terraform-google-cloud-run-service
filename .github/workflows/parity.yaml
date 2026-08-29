@@ -1,0 +1,12 @@
+name: Module parity
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  parity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: ./scripts/parity.sh check

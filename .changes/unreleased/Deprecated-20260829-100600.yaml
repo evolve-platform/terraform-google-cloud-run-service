@@ -1,0 +1,4 @@
+kind: Deprecated
+body: '`healthcheck` is now `healthcheck_liveness`. The old name is still read when
+  the new one is unset, so upgrading needs no edit'
+time: 2026-08-29T10:06:00.000000+02:00
