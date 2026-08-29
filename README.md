@@ -12,7 +12,7 @@ is released:
 ```hcl
 module "http_service" {
   source  = "evolve-platform/cloud-run-service/google//modules/terraform-managed"
-  version = "1.0.0"
+  version = "0.3.0"
 
   name       = "my-service"
   project_id = "my-project"

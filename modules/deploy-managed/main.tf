@@ -1,5 +1,5 @@
 locals {
-  # `healthcheck` is the pre-0.2 name for what is now `healthcheck_liveness`, and
+  # `healthcheck` is the pre-0.3 name for what is now `healthcheck_liveness`, and
   # is still honoured so a consumer upgrading gets the probe fixes without an
   # edit. The named variable wins where both are set.
   liveness_probe = var.healthcheck_liveness != null ? var.healthcheck_liveness : var.healthcheck

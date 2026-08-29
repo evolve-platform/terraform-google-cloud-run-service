@@ -105,7 +105,7 @@ variable "healthcheck" {
 }
 """
 
-HEALTHCHECK_TO = """# terraform-managed's pre-0.2 name for the liveness probe, carried here only so the
+HEALTHCHECK_TO = """# terraform-managed's pre-0.3 name for the liveness probe, carried here only so the
 # two copies stay comparable. Null by default: no consumer of this module predates
 # `healthcheck_liveness`, and a deprecated name that quietly adds a probe on `/`
 # would restart every container whose service answers 404 there.
