@@ -8,7 +8,7 @@ the running service, and an apply must not put this configuration back over it.
 ```hcl
 module "service" {
   source  = "evolve-platform/cloud-run-service/google//modules/deploy-managed"
-  version = "1.0.0"
+  version = "0.3.0"
 
   name       = "my-service"
   project_id = "my-project"
