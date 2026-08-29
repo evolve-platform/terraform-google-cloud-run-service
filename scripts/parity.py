@@ -1,15 +1,15 @@
 #!/usr/bin/env python3
-"""Generate modules/deploy-managed from the root module, or check it is in sync.
+"""Generate modules/deploy-managed from modules/terraform-managed, or check it is in sync.
 
-The submodule is a copy of the root module because lifecycle ignore_changes takes
+deploy-managed is a copy of terraform-managed because lifecycle ignore_changes takes
 a static list of attribute references: a variable cannot reach it, so the
 behaviour cannot be made opt-in, and a wrapper cannot add a lifecycle block to a
 resource a child module declares.
 
 A copy that is maintained by hand drifts. So this generates it instead: EDITS
 below is the entire intended difference between the two, and `check` regenerates
-the files in memory and compares them byte for byte. A fix made to the root
-module and not mirrored fails the check rather than going unnoticed.
+the files in memory and compares them byte for byte. A fix made to
+terraform-managed and not mirrored fails the check rather than going unnoticed.
 """
 
 from __future__ import annotations
@@ -18,8 +18,9 @@ import difflib
 import pathlib
 import sys
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
-SUB = ROOT / "modules" / "deploy-managed"
+REPO = pathlib.Path(__file__).resolve().parent.parent
+SRC = REPO / "modules" / "terraform-managed"
+SUB = REPO / "modules" / "deploy-managed"
 
 TRAFFIC_COMMENT_FROM = """  # Absent unless a label is asked for, which is what leaves the newest revision
   # taking everything -- the behaviour a service whose releases are applies
@@ -44,7 +45,7 @@ LIFECYCLE = """
   #
   # `ignore_changes` takes a static list of attribute references: no variable
   # and no conditional, so this cannot be made opt-in. That is the whole reason
-  # this module is a second copy of the root one rather than a wrapper over it.
+  # this module is a copy of terraform-managed rather than a wrapper over it.
   #
   # The index is the application container, which is declared first above and
   # stays first: Terraform sends the list in configuration order, and the deploy
@@ -104,7 +105,7 @@ variable "healthcheck" {
 }
 """
 
-HEALTHCHECK_TO = """# The root module's pre-0.2 name for the liveness probe, carried here only so the
+HEALTHCHECK_TO = """# terraform-managed's pre-0.2 name for the liveness probe, carried here only so the
 # two copies stay comparable. Null by default: no consumer of this module predates
 # `healthcheck_liveness`, and a deprecated name that quietly adds a probe on `/`
 # would restart every container whose service answers 404 there.
@@ -139,12 +140,12 @@ EDITS = {
 
 
 def render(name):
-	text = (ROOT / name).read_text()
+	text = (SRC / name).read_text()
 	for old, new in EDITS[name]:
 		if old not in text:
 			sys.exit(
-				f"{name}: the root module no longer contains a block scripts/parity.py "
-				f"rewrites for the submodule:\n\n{old}\n"
+				f"{name}: modules/terraform-managed no longer contains a block "
+				f"scripts/parity.py rewrites for deploy-managed:\n\n{old}\n"
 				"Update EDITS to match, then run 'task parity:update'."
 			)
 		text = text.replace(old, new, 1)
@@ -184,13 +185,13 @@ def main():
 		print(
 			f"\nmodules/deploy-managed is out of sync with the root module: "
 			f"{', '.join(stale)}.\n"
-			"Run 'task parity:update' to regenerate it, or move the change into the "
-			"root module so both copies get it.",
+			"Run 'task parity:update' to regenerate it, or move the change into "
+			"terraform-managed so both copies get it.",
 			file=sys.stderr,
 		)
 		return 1
 
-	print("modules/deploy-managed is in sync with the root module")
+	print("modules/deploy-managed is in sync with modules/terraform-managed")
 	return 0
 
 

@@ -1,6 +1,6 @@
 kind: Added
-body: '`modules/deploy-managed`, a copy of the root module that hands the image, the
-  container environment and the traffic split to a deploy tool rather than to Terraform.
-  It exists as a copy because `lifecycle` `ignore_changes` takes a static list of attribute
-  references, so the behaviour cannot be made opt-in with a variable'
+body: '`modules/deploy-managed`, a copy of `modules/terraform-managed` that hands the
+  image, the container environment and the traffic split to a deploy tool rather than
+  to Terraform. It exists as a copy because `lifecycle` `ignore_changes` takes a static
+  list of attribute references, so the behaviour cannot be made opt-in with a variable'
 time: 2026-08-29T10:00:00.000000+02:00
