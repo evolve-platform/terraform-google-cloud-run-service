@@ -6,15 +6,19 @@ versionExt: md
 versionFormat: '## {{.Version}} - {{.Time.Format "2006-01-02"}}'
 kindFormat: '### {{.Kind}}'
 changeFormat: '* {{.Body}}'
+# `Changed` and `Removed` are minor rather than major while this module is pre-1.0:
+# the release runs `changie batch auto` on every merge, and a major from 0.x lands
+# on 1.0.0 -- a statement about stability that a breaking change to one submodule
+# should not be making on its own. Releasing 1.0.0 means batching it by hand.
 kinds:
     - label: Added
       auto: minor
     - label: Changed
-      auto: major
+      auto: minor
     - label: Deprecated
       auto: minor
     - label: Removed
-      auto: major
+      auto: minor
     - label: Fixed
       auto: patch
     - label: Security
