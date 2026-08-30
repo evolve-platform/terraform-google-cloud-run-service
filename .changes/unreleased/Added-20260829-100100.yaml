@@ -1,6 +1,0 @@
-kind: Added
-body: Reverse-proxy sidecar, enabled by `proxy_image`. Ingress moves to the sidecar's
-  port and both probes move with it, since Cloud Run takes ports and probes on one
-  container only. Its CPU is carved out of `cpu` rather than added to it, because Cloud
-  Run sizes the instance from the sum of its containers' limits
-time: 2026-08-29T10:01:00.000000+02:00

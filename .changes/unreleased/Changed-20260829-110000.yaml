@@ -1,6 +1,0 @@
-kind: Changed
-body: The module moved into `modules/terraform-managed` and the root declares no resources.
-  Point `source` at that submodule; the module block and the resource keep their names,
-  so the address is unchanged and there is no state to move. Bumping the version without
-  changing the source fails at plan rather than doing anything
-time: 2026-08-29T11:00:00.000000+02:00
