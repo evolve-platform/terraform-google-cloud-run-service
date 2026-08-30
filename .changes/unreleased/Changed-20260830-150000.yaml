@@ -1,0 +1,7 @@
+kind: Changed
+body: '`modules/deploy-managed` no longer applies `container_command` after a first
+  create -- it joins the image and the environment in `ignore_changes`. A command names
+  a path inside the image, so an image whose layout moves and a command that has not
+  are a container that will not start; owned by the deploy the two land in one write
+  instead of in two tools with no ordering between them'
+time: 2026-08-30T15:00:00.000000+02:00

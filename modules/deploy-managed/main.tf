@@ -257,6 +257,11 @@ resource "google_cloud_run_v2_service" "primary" {
   # and no conditional, so this cannot be made opt-in. That is the whole reason
   # this module is a copy of terraform-managed rather than a wrapper over it.
   #
+  # The command is in the list for a reason of its own: it names a path inside
+  # the image, so an image whose layout moves and a command that has not are a
+  # container that will not start. Left to Terraform those are two writes in two
+  # tools with no ordering between them; owned by the deploy they land in one.
+  #
   # The index is the application container, which is declared first above and
   # stays first: Terraform sends the list in configuration order, and the deploy
   # tool rewrites a container in place rather than reordering. The reverse-proxy
@@ -266,6 +271,7 @@ resource "google_cloud_run_v2_service" "primary" {
     ignore_changes = [
       template[0].annotations,
       template[0].containers[0].image,
+      template[0].containers[0].command,
       template[0].containers[0].env,
       traffic,
     ]

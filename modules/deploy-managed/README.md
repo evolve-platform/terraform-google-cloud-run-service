@@ -43,11 +43,17 @@ being noticed years later. Edit `terraform-managed` and run `task parity:update`
 ## What the deploy owns
 
 `var.image` is only the **bootstrap** value, used when the service is first
-created. Every tag after that comes from the deploy. `var.env_vars` and
-`var.secrets` are the same: they exist so a first create produces a container that
-boots, and every value after that is applied by the deploy. The list cannot be
-narrower than the whole `env` block — `ignore_changes` has no way to name a single
-variable — which is why the secret references are in there with the rest.
+created. Every tag after that comes from the deploy. `var.env_vars`,
+`var.secrets` and `var.container_command` are the same: they exist so a first
+create produces a container that boots, and every value after that is applied by
+the deploy. The list cannot be narrower than the whole `env` block —
+`ignore_changes` has no way to name a single variable — which is why the secret
+references are in there with the rest.
+
+The command is on that list for a reason of its own. It names a path inside the
+image, so an image whose layout moves and a command that has not are a container
+that will not start — and left to Terraform those are two writes in two tools with
+no ordering between them.
 
 The index names the application container, which is declared first and stays
 first. The reverse-proxy sidecar is deliberately not covered: Terraform owns its
