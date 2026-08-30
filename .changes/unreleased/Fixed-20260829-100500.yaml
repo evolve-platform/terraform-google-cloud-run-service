@@ -1,5 +1,0 @@
-kind: Fixed
-body: The liveness probe now states the port it checks. It is a computed attribute,
-  so an absent one is filled in by the API and never planned again -- which left probes
-  polling a port the container does not listen on
-time: 2026-08-29T10:05:00.000000+02:00
