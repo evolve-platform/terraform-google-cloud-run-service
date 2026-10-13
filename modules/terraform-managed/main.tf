@@ -139,7 +139,7 @@ resource "google_cloud_run_v2_service" "primary" {
           value_source {
             secret_key_ref {
               secret  = env.value
-              version = "latest"
+              version = lookup(var.secret_versions, env.key, "latest")
             }
           }
         }
@@ -218,7 +218,7 @@ resource "google_cloud_run_v2_service" "primary" {
             value_source {
               secret_key_ref {
                 secret  = env.value
-                version = "latest"
+                version = lookup(var.proxy_secret_versions, env.key, "latest")
               }
             }
           }

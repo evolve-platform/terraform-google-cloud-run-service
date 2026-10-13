@@ -24,18 +24,23 @@ newest revision taking everything. It is there because `deploy-managed` is
 generated from this module and needs it; naming a label bootstraps one tagged
 traffic entry, which is only useful to something staging releases onto tags.
 
+`secret_versions` and `proxy_secret_versions` pin application and sidecar secrets
+by environment variable name; omitted entries use `latest`. See
+[secret version pinning](../../README.md#pinning-secret-versions) for an example
+and retention requirements.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
 | <a name="requirement_google"></a> [google](#requirement\_google) | >= 6.12.0 |
 
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_google"></a> [google](#provider\_google) | >= 6.12.0 |
 
 ## Modules
@@ -45,13 +50,13 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [google_cloud_run_v2_service.primary](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_container_command"></a> [container\_command](#input\_container\_command) | The command to run in the container | `list(string)` | `[]` | no |
 | <a name="input_cpu"></a> [cpu](#input\_cpu) | Number of CPU's to assign, can be 1, 2, 4 or 8 | `number` | `1` | no |
 | <a name="input_cpu_always_allocated"></a> [cpu\_always\_allocated](#input\_cpu\_always\_allocated) | Whether to always allocate CPU | `bool` | `true` | no |
@@ -77,7 +82,9 @@ No modules.
 | <a name="input_proxy_image"></a> [proxy\_image](#input\_proxy\_image) | Reverse-proxy sidecar image. Empty disables the sidecar. | `string` | `""` | no |
 | <a name="input_proxy_memory"></a> [proxy\_memory](#input\_proxy\_memory) | Memory has no such constraint -- any total is allowed -- so this one does add. | `string` | `"256Mi"` | no |
 | <a name="input_proxy_port"></a> [proxy\_port](#input\_proxy\_port) | The port the reverse-proxy sidecar listens on. Ingress moves here when the sidecar is enabled. | `number` | `8080` | no |
+| <a name="input_proxy_secret_versions"></a> [proxy\_secret\_versions](#input\_proxy\_secret\_versions) | Secret versions keyed by environment variable name. Numeric pins make cold starts and rollbacks repeatable. | `map(string)` | `{}` | no |
 | <a name="input_proxy_secrets"></a> [proxy\_secrets](#input\_proxy\_secrets) | Secret environment for the reverse-proxy sidecar, as env var name => Secret Manager secret id | `map(string)` | `{}` | no |
+| <a name="input_secret_versions"></a> [secret\_versions](#input\_secret\_versions) | Secret versions keyed by environment variable name. Numeric pins make cold starts and rollbacks repeatable. | `map(string)` | `{}` | no |
 | <a name="input_secrets"></a> [secrets](#input\_secrets) | Environment variables to set | `map(any)` | `{}` | no |
 | <a name="input_service_account"></a> [service\_account](#input\_service\_account) | The service account to run the service as | `string` | `null` | no |
 | <a name="input_vpc_network"></a> [vpc\_network](#input\_vpc\_network) | The VPC network to deploy the service in | `string` | `""` | no |
@@ -86,7 +93,7 @@ No modules.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_name"></a> [name](#output\_name) | n/a |
 | <a name="output_service_account"></a> [service\_account](#output\_service\_account) | n/a |
 | <a name="output_service_name"></a> [service\_name](#output\_service\_name) | n/a |

@@ -61,6 +61,28 @@ instance from the sum of its containers' limits, and that sum has to be one of t
 supported values. So the way to leave the application container whole is a larger
 `cpu`, not a smaller `proxy_cpu`.
 
+## Pinning secret versions
+
+Both modules accept `secret_versions` and `proxy_secret_versions`, keyed by the
+environment variable names in `secrets` and `proxy_secrets`:
+
+```hcl
+secrets         = { API_TOKEN = "api-token" }
+secret_versions = { API_TOKEN = "7" }
+
+proxy_secrets         = { OTEL_EXPORTER_OTLP_HEADERS = "otel-headers" }
+proxy_secret_versions = { OTEL_EXPORTER_OTLP_HEADERS = "3" }
+```
+
+Omitted entries continue to use `latest`. Numeric versions keep a revision's
+secrets stable across cold starts, provided those versions remain enabled and
+accessible. Retaining versions and their parent secrets is the caller's
+responsibility; this module does not create or retain Secret Manager resources.
+
+In `deploy-managed`, application secret versions are bootstrap values: later
+changes must be written by the deploy tool because application env is ignored.
+Sidecar secret versions remain Terraform-owned and change on apply.
+
 <!-- BEGIN_TF_DOCS -->
 ## Requirements
 
@@ -81,7 +103,7 @@ No resources.
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_acknowledge_module_move"></a> [acknowledge\_module\_move](#input\_acknowledge\_module\_move) | Unused. The module moved; see the error message. | `bool` | `false` | no |
 
 ## Outputs

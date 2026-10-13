@@ -262,3 +262,25 @@ variable "deletion_protection" {
   type        = bool
   default     = true
 }
+
+variable "secret_versions" {
+  description = "Secret versions keyed by environment variable name. Numeric pins make cold starts and rollbacks repeatable."
+  type        = map(string)
+  default     = {}
+
+  validation {
+    condition     = alltrue([for version in values(var.secret_versions) : can(regex("^(latest|[1-9][0-9]*)$", version))])
+    error_message = "Secret versions must be positive numbers or latest."
+  }
+}
+
+variable "proxy_secret_versions" {
+  description = "Secret versions keyed by environment variable name. Numeric pins make cold starts and rollbacks repeatable."
+  type        = map(string)
+  default     = {}
+
+  validation {
+    condition     = alltrue([for version in values(var.proxy_secret_versions) : can(regex("^(latest|[1-9][0-9]*)$", version))])
+    error_message = "Secret versions must be positive numbers or latest."
+  }
+}

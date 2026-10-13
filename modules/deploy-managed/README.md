@@ -23,6 +23,7 @@ lifecycle {
   ignore_changes = [
     template[0].annotations,
     template[0].containers[0].image,
+    template[0].containers[0].command,
     template[0].containers[0].env,
     traffic,
   ]
@@ -44,7 +45,7 @@ being noticed years later. Edit `terraform-managed` and run `task parity:update`
 
 `var.image` is only the **bootstrap** value, used when the service is first
 created. Every tag after that comes from the deploy. `var.env_vars`,
-`var.secrets` and `var.container_command` are the same: they exist so a first
+`var.secrets`, `var.secret_versions` and `var.container_command` are the same: they exist so a first
 create produces a container that boots, and every value after that is applied by
 the deploy. The list cannot be narrower than the whole `env` block —
 `ignore_changes` has no way to name a single variable — which is why the secret
@@ -57,14 +58,16 @@ no ordering between them.
 
 The index names the application container, which is declared first and stays
 first. The reverse-proxy sidecar is deliberately not covered: Terraform owns its
-image and its whole environment, so those land on the apply rather than waiting for
-a release.
+image and its whole environment, including `proxy_secret_versions`, so those land
+on the apply rather than waiting for a release. See [secret version pinning](../../README.md#pinning-secret-versions)
+for numeric pins and the backwards-compatible `latest` default.
 
 ## Blue-green
 
 A Cloud Run service divides traffic between named **tags** rather than the newest
-revision, which is what makes a blue-green release possible: the previous revision
-stays alive, and `blue`/`green` each point at one. A deploy stages a release onto
+revision, which is what makes a blue-green release possible: `blue`/`green` each
+point at one revision. A previous revision at zero traffic may scale to zero and
+need to cold-start on rollback. A deploy stages a release onto
 whichever tag carries no traffic, smoke-tests it on that tag's own URL, and
 switches in one write.
 
@@ -90,7 +93,7 @@ releases.
 
 Everything outside `template[0].containers[0]` and `traffic` lands on the apply
 itself — scaling, ingress, egress, the VPC interface, the service account, labels.
-Inside the container only `cpu`, `memory`, the probes and `container_command` are
+Inside the container `cpu`, `memory` and the probes are
 still Terraform's; those land on the next release, which stages from the service's
 own template and picks them up. The ordering is apply first, release second.
 
@@ -98,14 +101,14 @@ own template and picks them up. The ordering is apply first, release second.
 ## Requirements
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="requirement_terraform"></a> [terraform](#requirement\_terraform) | >= 1.3 |
 | <a name="requirement_google"></a> [google](#requirement\_google) | >= 6.12.0 |
 
 ## Providers
 
 | Name | Version |
-|------|---------|
+| ---- | ------- |
 | <a name="provider_google"></a> [google](#provider\_google) | >= 6.12.0 |
 
 ## Modules
@@ -115,13 +118,13 @@ No modules.
 ## Resources
 
 | Name | Type |
-|------|------|
+| ---- | ---- |
 | [google_cloud_run_v2_service.primary](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/cloud_run_v2_service) | resource |
 
 ## Inputs
 
 | Name | Description | Type | Default | Required |
-|------|-------------|------|---------|:--------:|
+| ---- | ----------- | ---- | ------- | :------: |
 | <a name="input_container_command"></a> [container\_command](#input\_container\_command) | The command to run in the container | `list(string)` | `[]` | no |
 | <a name="input_cpu"></a> [cpu](#input\_cpu) | Number of CPU's to assign, can be 1, 2, 4 or 8 | `number` | `1` | no |
 | <a name="input_cpu_always_allocated"></a> [cpu\_always\_allocated](#input\_cpu\_always\_allocated) | Whether to always allocate CPU | `bool` | `true` | no |
@@ -147,7 +150,9 @@ No modules.
 | <a name="input_proxy_image"></a> [proxy\_image](#input\_proxy\_image) | Reverse-proxy sidecar image. Empty disables the sidecar. | `string` | `""` | no |
 | <a name="input_proxy_memory"></a> [proxy\_memory](#input\_proxy\_memory) | Memory has no such constraint -- any total is allowed -- so this one does add. | `string` | `"256Mi"` | no |
 | <a name="input_proxy_port"></a> [proxy\_port](#input\_proxy\_port) | The port the reverse-proxy sidecar listens on. Ingress moves here when the sidecar is enabled. | `number` | `8080` | no |
+| <a name="input_proxy_secret_versions"></a> [proxy\_secret\_versions](#input\_proxy\_secret\_versions) | Secret versions keyed by environment variable name. Numeric pins make cold starts and rollbacks repeatable. | `map(string)` | `{}` | no |
 | <a name="input_proxy_secrets"></a> [proxy\_secrets](#input\_proxy\_secrets) | Secret environment for the reverse-proxy sidecar, as env var name => Secret Manager secret id | `map(string)` | `{}` | no |
+| <a name="input_secret_versions"></a> [secret\_versions](#input\_secret\_versions) | Secret versions keyed by environment variable name. Numeric pins make cold starts and rollbacks repeatable. | `map(string)` | `{}` | no |
 | <a name="input_secrets"></a> [secrets](#input\_secrets) | Environment variables to set | `map(any)` | `{}` | no |
 | <a name="input_service_account"></a> [service\_account](#input\_service\_account) | The service account to run the service as | `string` | `null` | no |
 | <a name="input_vpc_network"></a> [vpc\_network](#input\_vpc\_network) | The VPC network to deploy the service in | `string` | `""` | no |
@@ -156,7 +161,7 @@ No modules.
 ## Outputs
 
 | Name | Description |
-|------|-------------|
+| ---- | ----------- |
 | <a name="output_name"></a> [name](#output\_name) | n/a |
 | <a name="output_service_account"></a> [service\_account](#output\_service\_account) | n/a |
 | <a name="output_service_name"></a> [service\_name](#output\_service\_name) | n/a |
